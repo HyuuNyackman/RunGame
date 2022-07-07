@@ -10,6 +10,9 @@ public class WallRun : MonoBehaviour
     [SerializeField, Tooltip("壁判定の原点")] private Transform rayOrigin;
     [SerializeField] private float rayLength;
     [SerializeField] private LayerMask wallLayer;
+    [SerializeField, Tooltip("基本速度を上げる倍率"), Range(1, 2)] private float runSpeedUpMultiplier = 1.1f;
+
+    private PlayerController playerController;
 
     public Vector3 JumpDirection { get; private set; }
     public bool RunLeft { get; private set; }
@@ -19,15 +22,18 @@ public class WallRun : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-
+        playerController = GetComponent<PlayerController>();
     }
 
     // Update is called once per frame
     void Update()
     {
         rayOrigin.rotation = Quaternion.Euler(0, transform.localEulerAngles.y, 0);
-        Debug.DrawRay(rayOrigin.position, -rayOrigin.right * rayLength, Color.red);
-        Debug.DrawRay(rayOrigin.position, rayOrigin.right * rayLength, Color.red);
+
+        //  壁があるかの確認のためにに飛ばすレイの可視化
+        // Debug.DrawRay(rayOrigin.position, -rayOrigin.right * rayLength, Color.red);
+        // Debug.DrawRay(rayOrigin.position, rayOrigin.right * rayLength, Color.red);
+        // Debug.DrawRay(transform.position, JumpDirection * 100, Color.blue);
 
         if (RunLeft)
         {
@@ -59,6 +65,7 @@ public class WallRun : MonoBehaviour
         {
             RunLeft = true;
             JumpDirection = (transform.up + wallLeftHit.normal).normalized;
+            //playerController.RunSpeedUp(runSpeedUpMultiplier);
         }
 
         return existWall;
@@ -75,10 +82,12 @@ public class WallRun : MonoBehaviour
                 existWall = true;
             }
         }
+
         if (existWall)
         {
             RunRight = true;
             JumpDirection = (transform.up + wallRightHit.normal).normalized;
+            //playerController.RunSpeedUp(runSpeedUpMultiplier);
         }
 
         return existWall;

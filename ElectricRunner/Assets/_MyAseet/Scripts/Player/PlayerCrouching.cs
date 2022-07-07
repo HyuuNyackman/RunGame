@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class PlayerCrouching : MonoBehaviour
 {
@@ -12,6 +11,7 @@ public class PlayerCrouching : MonoBehaviour
     [SerializeField, Tooltip("移動速度倍率")] private float slidingMoveMultiplier;
     [SerializeField, Tooltip("スライディングの助走時間")] private float slidingThreshold;
     [SerializeField, Tooltip("スライディングしている最大時間")] private float slidingMaxTime;
+    [SerializeField, Tooltip("スライディングした時に基本速度を上げる倍率"), Range(1, 2)] private float runSpeedUpMultiplier = 1.1f;
 
     [Header("カメラの設定")]
     [SerializeField, Tooltip("カメラの上下移動速度")] private float cameraUpDownSpeed;
@@ -129,6 +129,7 @@ public class PlayerCrouching : MonoBehaviour
         if (canSliding)
         {
             MoveDirection = transform.forward;
+            playerController.RunSpeedUp(runSpeedUpMultiplier);
             playerController.SetPlayerState(PlayerController.PlayerState.Sliding);
         }
         else

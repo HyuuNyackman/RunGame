@@ -1,102 +1,193 @@
 //////////////////////////////////////////////////////////////////////////////////
-///@—p“r
-/// ‹ó‚ÌƒQ[ƒ€ƒIƒuƒWƒFƒNƒg‚Éƒ\[ƒXƒR[ƒh‚ğ’Ç‰Á‚·‚é
+///ã€€ç”¨é€”
+/// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã«ã‚½ãƒ¼ã‚¹ã‚³ãƒ¼ãƒ‰ã‚’è¿½åŠ ã™ã‚‹
 ///
-/// Œø‰Ê
-/// ƒIƒuƒWƒFƒNƒg‚ÌŒü‚¢‚Ä‚¢‚é•ûŒü‚ÉƒvƒŒƒnƒuƒIƒuƒWƒFƒNƒg‚ğ‘Å‚¿o‚·
+/// åŠ¹æœ
+/// ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®å‘ã„ã¦ã„ã‚‹æ–¹å‘ã«ãƒ—ãƒ¬ãƒãƒ–ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’æ‰“ã¡å‡ºã™
 /// 
 //////////////////////////////////////////////////////////////////////////////////
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-//‹–ì‚Ì”ÍˆÍ“à‚É‚¢‚é‚Æ‚«‚Í•ûŒüƒxƒNƒgƒ‹‚ğæ“¾A”ÍˆÍŠO‚È‚ç•’Ê‚É”ò‚Î‚·
+//è¦–é‡ã®ç¯„å›²å†…ã«ã„ã‚‹ã¨ãã¯æ–¹å‘ãƒ™ã‚¯ãƒˆãƒ«ã‚’å–å¾—ã€ç¯„å›²å¤–ãªã‚‰æ™®é€šã«é£›ã°ã™
 public class KnifeShot : MonoBehaviour
 {
-    [SerializeField] Transform aimTarget;
-    // float•Ï”
-    public float Speed;
+    // floatå¤‰æ•°
+    [SerializeField] float speed;
     public float Radius;
-    //‹–ìŠp
-    public float SightAngle = 5.0f;
-    private float time;
-    [SerializeField]private float limit = 3;
 
-    //bool•Ï”
+    //boolå¤‰æ•°
     public bool Return;
-    private bool shot = false;
+    public bool Shot = false;
 
-    // GameObject•Ï”
+    // GameObjectå¤‰æ•°
     public GameObject Knife;
     public GameObject ShotPoint;
 
-    //RigidBody•Ï”
+    [SerializeField] Transform mainCam;
+    [SerializeField] float assistRange=10;
+    [SerializeField] bool isHit;
+    public bool HoldHand = true;
+    [SerializeField] GameObject knifeTraile;
+ 
+    //ãƒŠã‚¤ãƒ•ã‚’æ‰“ã¡å‡ºã™å ´æ‰€
+    //public GameObject KnifeShotPoint;
+    //  ãƒŠã‚¤ãƒ•ã‚’æˆ»ã™å ´æ‰€(ã‚¹ã‚¿ãƒ¼ãƒˆæ™‚ã®ãƒ­ãƒ¼ã‚«ãƒ«åº§æ¨™)
+    Vector3 knifeBackPoint;
+
+    //RigidBodyå¤‰æ•°
     Rigidbody rb;
 
-    //‚»‚Ì‘¼
+    //ãã®ä»–
     RaycastHit hit;
+    // MeshRenderer mesh;
 
-    public void Start()
+    //  ãƒŠã‚¤ãƒ•ã®è¦ªã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
+    Transform parentObj;
+
+    //ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ç§»å‹•ç”¨
+    //private CharacterController characterController;
+    private void Start()
     {
-        rb = GetComponent<Rigidbody>();
+        // mesh = Knife.GetComponent<MeshRenderer>();
+        // mesh.enabled = false;
+        //  characterController = GetComponent<CharacterController>();
+        // Vector3 knife = Knife.transform.position;
+        rb = Knife.GetComponent<Rigidbody>();
+
+        //  ç¾åœ¨ã®ãƒŠã‚¤ãƒ•ã®ãƒ­ãƒ¼ã‚«ãƒ«åº§æ¨™ã‚’è¦šãˆã¦ãŠã
+        knifeBackPoint = Knife.transform.localPosition;
+        //  ç¾åœ¨ã®è¦ªã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’å…¥ã‚Œã‚‹
+        parentObj = Knife.transform.parent;
     }
     public void Update()
     {
-        var isHit = Physics.SphereCast(aimTarget.position, Radius, transform.forward * 10, out hit);
+       
+        // //ãƒã‚¦ã‚¹å³ã‚’æŠ¼ã—ãŸã¨ãã«å›å
+        // {
+        //     ReCharge();
+        // }
+        // //å·¦ãƒã‚¦ã‚¹ãƒœã‚¿ãƒ³ã‚’æŠ¼ã—ãŸéš›ã«ã‚·ãƒ§ãƒƒãƒˆ
+        // //Rayã«ä½•ã‚‚å¼•ã£æ›ã‹ã£ã¦ãªã„æ™‚ã®å‡¦ç†
+        // {
+        //     ThrowingKnife();
+        // }
+        // if (Knife.GetComponent<DestroyKnife>().Stop)
+        // {
+        //     HookFlyingMovement();
+        // }
+    }
+    public void ThrowingKnife()
+    {
+        isHit = Physics.SphereCast(mainCam.position, Radius, mainCam.forward * assistRange, out hit);
+
         if (isHit)
         {
-            //Ray‚Ì“–‚½‚Á‚½ƒIƒuƒWƒFƒNƒg‚ªtargetƒ^ƒO‚¾‚Á‚½ê‡
+            //Rayã®å½“ãŸã£ãŸã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆãŒtargetã‚¿ã‚°ã ã£ãŸå ´åˆ
             if (hit.collider.tag == "Target")
             {
-                //‚»‚ÌƒIƒuƒWƒFƒNƒg‚ğShotPoint•Ï”‚ÉŠi”[
+                Debug.Log("TargetãŒæœ‰åŠ¹");
+
+                //ãã®ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ShotPointå¤‰æ•°ã«æ ¼ç´
                 ShotPoint = hit.collider.gameObject;
+                //if (Physics.CheckSphere(transform.position, Radius))
+                //{
+
+                //    ShotPoint = hit.collider.gameObject;
+                //}
             }
+            else
+            {
+                ShotPoint = null;
+            }
+
         }
         else
         {
             ShotPoint = null;
         }
-        //Shot();
-    }
-    public void Shot()
-    {
-        //¶ƒ}ƒEƒXƒ{ƒ^ƒ“‚ğ‰Ÿ‚µ‚½Û‚ÉƒVƒ‡ƒbƒg
-        //Ray‚É‰½‚àˆø‚ÁŠ|‚©‚Á‚Ä‚È‚¢‚Ìˆ—
-        if (shot == false && ShotPoint == null)
-        {
-            Return = false;
-            shot = true;
-            rb = Instantiate(Knife,aimTarget.position,transform.rotation).GetComponent<Rigidbody>();
-            rb.AddForce(aimTarget.forward * Speed, ForceMode.Impulse);
-        }
-        //Ray‚Éˆø‚ÁŠ|‚©‚Á‚Ä‚é‚Æ‚«‚Ìˆ—
-        else if (shot == false && ShotPoint != null)
-        {
-            Return = false;
-            shot = true;
+        
 
-            //”­Ë‘ä‚Æƒ^[ƒQƒbƒg‚ÌƒxƒNƒgƒ‹‚ğŒvZ‚·‚é
-            Vector3 GameObjectPos = aimTarget.position;
+
+        if (Shot == false && ShotPoint == null)
+        {
+            Return = false;
+            // mesh.enabled = true;
+            Shot = true;
+
+            //ã‚¨ãƒ•ã‚§ã‚¯ãƒˆ
+            knifeTraile.SetActive(true);
+
+            //è‡ªåˆ†ã®å ´æ‰€ã«æˆ»ã™
+            Knife.transform.parent = parentObj;
+            Knife.transform.localPosition = knifeBackPoint;
+
+            //ãƒŠã‚¤ãƒ•ã®ã‚·ãƒ§ãƒƒãƒˆ
+            Knife.transform.parent = null;
+            rb.isKinematic = false;
+            Vector3 force = mainCam.forward * speed;
+            rb.AddForce(force, ForceMode.Impulse);
+        }
+        //Rayã«å¼•ã£æ›ã‹ã£ã¦ã‚‹ã¨ãã®å‡¦ç†
+        else if (Shot == false && ShotPoint != null)
+        {
+            Return = false;
+            // mesh.enabled = true;
+            Shot = true;
+
+            //è‡ªåˆ†ã®å ´æ‰€ã«æˆ»ã™
+            Knife.transform.parent = parentObj;
+            Knife.transform.localPosition = knifeBackPoint;
+
+            //ç™ºå°„å°ã¨ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã®ãƒ™ã‚¯ãƒˆãƒ«ã‚’è¨ˆç®—ã™ã‚‹
+            Vector3 knifeShotPoint = Knife.transform.position;
+            Vector3 GameObjectPos = knifeShotPoint;
             Vector3 TargetPos = ShotPoint.transform.position;
-            Vector3 shotForward = Vector3.Scale((TargetPos - aimTarget.position), new Vector3(1, 1, 1)).normalized;
+            //Vector3 shotForward = Vector3.Scale((TargetPos - GameObjectPos), new Vector3(1, 1, 1)).normalized;
+            Vector3 shotForward= (TargetPos - GameObjectPos).normalized;
 
-            //ƒiƒCƒt‚Ì¶¬‚©‚çƒVƒ‡ƒbƒg
-            rb = Instantiate(Knife, aimTarget.position, transform.rotation).GetComponent<Rigidbody>();
-            Vector3 force = new Vector3(shotForward.x, shotForward.y, shotForward.z);
-            rb.AddForce(force * Speed, ForceMode.Impulse);
+            //ãƒŠã‚¤ãƒ•ã®ã‚·ãƒ§ãƒƒãƒˆ
+            Knife.transform.parent = null;
+            rb.isKinematic = false;
+            //Vector3 force = new Vector3(shotForward.x, shotForward.y, shotForward.z);
+            //rb.AddForce(force * speed, ForceMode.Impulse);
+            rb.AddForce(shotForward*speed, ForceMode.Impulse);
+            knifeTraile.SetActive(true);
         }
-        //‰Eƒ}ƒEƒXƒ{ƒ^ƒ“‚ğ‰Ÿ‚µ‚½Û‚ÉƒŠƒ`ƒƒ[ƒW
-        Recharge();
+        knifeTraile.SetActive(false);
     }
-    public void Recharge()
+    //ãƒŠã‚¤ãƒ•ã®åˆºã•ã£ãŸä½ç½®ã¸é£›ã¶
+    public void HookFlyingMovement()
     {
-        if (shot == true)
+        if (Knife.GetComponent<DestroyKnife>().Stop)
         {
-            {
-                shot = false;
-                time = 0;
-                Return = true;
-            }
+            Vector3 hookPoint = Knife.transform.position;
+            Vector3 moveDir = (hookPoint - transform.position).normalized;
+            float flyingSpeed = Vector3.Distance(transform.position, hookPoint) * 2f;
+            //  characterController.Move(moveDir * flyingSpeed * Time.deltaTime);
+        }
+    }
+    public void ReCharge()
+    {
+        //å›åæ™‚ã«å…ƒã®ä½ç½®ã«æˆ»ã™
+        Return = true;
+        rb.velocity = Vector3.zero;
+        rb.isKinematic = true;
+        // mesh.enabled = false;
+        Shot = false;
+
+        //è‡ªåˆ†ã®å ´æ‰€ã«æˆ»ã™
+        Knife.transform.parent = parentObj;
+        Knife.transform.localPosition = knifeBackPoint;
+    }
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(mainCam.position, Radius);
+        if (isHit) 
+        {
+            Gizmos.color= Color.red;
         }
     }
 }
