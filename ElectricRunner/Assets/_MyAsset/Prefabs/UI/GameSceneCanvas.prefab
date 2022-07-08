@@ -123,8 +123,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: SceneChange_Manager, Assembly-CSharp
-        m_MethodName: ReStart
+        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
+        m_MethodName: ReLoadToGameScene
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -497,7 +497,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: SceneChange_Manager, Assembly-CSharp
-        m_MethodName: Game_Exit
+        m_MethodName: OnPushExitGameButton
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1040,7 +1040,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: SceneChange_Manager, Assembly-CSharp
-        m_MethodName: Return_Select
+        m_MethodName: OnPushBackSelectButton
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1174,7 +1174,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: SceneChange_Manager, Assembly-CSharp
-        m_MethodName: Rrturn_Title
+        m_MethodName: OnPushBackTitleButton
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

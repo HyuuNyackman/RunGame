@@ -6,79 +6,53 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    //ƒfƒoƒbƒOƒ‚[ƒh—LŒø‰»
-    [SerializeField] private bool debugFallDeath = false;
-    [SerializeField] private bool debugSuicide=false;
-
-    //ˆÈ‰ºƒAƒCƒeƒ€‚ÌŠi”[
+    //ä»¥ä¸‹ã‚¢ã‚¤ãƒ†ãƒ ã®æ ¼ç´
     [SerializeField] private GameObject returnToGameCanvas;
     [SerializeField] private GameObject player;
 
-    //ˆÈ‰º—‰º€ğŒ
-    [Header("³‚Ì”‚Å“ü—Í‚µ‚ÄƒIƒbƒP[‚È‚Í‚¸")]
-    [SerializeField] private float gameOverLine = 50.0f;
-
-
-    //ƒŠƒXƒ|[ƒ“ŠÖŒW
+    //ãƒªã‚¹ãƒãƒ¼ãƒ³é–¢ä¿‚
     [SerializeField] GameObject parentRespawnObj;
-    [SerializeField] List< RespawnPoint> respawnPoints =new List<RespawnPoint>();
-    [SerializeField] bool respornBool;
+    [SerializeField] List<RespawnPoint> respawnPoints = new List<RespawnPoint>();
     //[SerializeField] GameObject[] respoObj;
-    
-   
+
+    //ã‚²ãƒ¼ãƒ ã‚ªãƒ¼ãƒãƒ¼é–¢ä¿‚
+    public static bool IsPlayerDeath { get; private set; }
 
     private void Start()
     {
-        // ƒvƒŒƒCƒ„[‚ÌƒŠƒXƒ|[ƒ“
+        IsPlayerDeath = false;
+        // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ãƒªã‚¹ãƒãƒ¼ãƒ³
         //Debug.Log(RespawnPoint.RespawnNumber);
-        respornBool = false;
         player.transform.position = respawnPoints[RespawnPoint.RespawnNumber].Respawn(player.transform.position);
     }
-   
+
 
     public void GameOver()
     {
+        IsPlayerDeath = true;
         returnToGameCanvas.SetActive(true);
-        //Ä¶‚ğ’â~
+        //å†ç”Ÿã‚’åœæ­¢
         Time.timeScale = 0;
+
+        //  ã‚«ãƒ¼ã‚½ãƒ«ã‚’å‡ºã™
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
     }
-    //ƒŠƒgƒ‰ƒCƒ{ƒ^ƒ“‚ÌŠÖ”
+    //ãƒªãƒˆãƒ©ã‚¤ãƒœã‚¿ãƒ³ã®é–¢æ•°
     public void ReLoadToGameScene()
     {
-        respornBool = true;
         Time.timeScale = 1;
-
 
         returnToGameCanvas.SetActive(false);
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-        respornBool = false;
 
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
-   
+
     void Update()
     {
         respawnPoints[RespawnPoint.RespawnNumber].CurrentBool = false;
-        //‚Ó‚Â‚¤‚Ì€–S
-        if(debugSuicide==true/*&& ‚±‚±‚É–{—ˆ‚Ì€–S”»’è*/)
-        {
-            GameOver();
-        }
-        //—‰º€
-        if (debugFallDeath/*&& ‚±‚±‚É–{—ˆ‚Ì€–S”»’è*/)
-        {
-            //‚±‚±‚ÌƒRƒƒ“ƒgƒAƒEƒg‚ğ‚¯‚µ‚Äg‚¤
-            //GameOver();
-
-            //ƒvƒŒƒCƒ„[‚ªƒ[ƒ‹ƒhÀ•W‚ÌgameOverLine‚Ì‚‚³‚Ü‚Å—‚¿‚½‚ç€
-            if (player.transform.position.y <= gameOverLine * -1 && respornBool == false)
-            {
-                GameOver();
-            }
-        }
     }
     public int RespornNumber(RespawnPoint respawnPoint)
     {

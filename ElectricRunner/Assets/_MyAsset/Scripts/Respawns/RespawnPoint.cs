@@ -11,11 +11,11 @@ public class RespawnPoint : RangeGimmickManager
 
     protected override void Update()
     {
-            base.Update();
+        base.Update();
     }
     /// <summary>
-    /// RespawnNumber‚Ì‰Šú‰»
-    /// ƒŠƒgƒ‰ƒCˆÈŠO‚ÌŒÄ‚Ño‚·
+    /// RespawnNumberã®åˆæœŸåŒ–
+    /// ãƒªãƒˆãƒ©ã‚¤ä»¥å¤–ã®æ™‚å‘¼ã³å‡ºã™
     /// </summary>
     public void InitRespawnNumber()
     {
@@ -30,10 +30,10 @@ public class RespawnPoint : RangeGimmickManager
     }
 
     /// <summary>
-    /// ƒvƒŒƒCƒ„[‚Ìƒ|ƒWƒVƒ‡ƒ“‚ğ•Ô‚·
+    /// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ãƒã‚¸ã‚·ãƒ§ãƒ³ã‚’è¿”ã™
     /// </summary>
-    /// <param name="position">ƒvƒŒƒCƒ„[‚Ìƒ|ƒWƒVƒ‡ƒ“</param>
-    /// <returns>ƒ|ƒWƒVƒ‡ƒ“‚ğ•Ô‚·</returns>
+    /// <param name="position">ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ãƒã‚¸ã‚·ãƒ§ãƒ³</param>
+    /// <returns>ãƒã‚¸ã‚·ãƒ§ãƒ³ã‚’è¿”ã™</returns>
     public Vector3 Respawn(Vector3 position)
     {
         position = respawnPointObj.transform.position;

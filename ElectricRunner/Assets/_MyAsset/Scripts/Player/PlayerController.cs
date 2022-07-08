@@ -24,6 +24,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private PlayerCrouching playerCrouching;
     [SerializeField] private WallRun wallRun;
     [SerializeField] private KnifeShot knifeShot;
+    [SerializeField] SceneChange_Manager sceneChange_Manager;
+    [SerializeField] GameManager gameManager;
 
     private PlayerInput playerInput;
     private InputAction move;
@@ -31,18 +33,21 @@ public class PlayerController : MonoBehaviour
     private InputAction jump;
     private InputAction crouch;
     private InputAction throwKnife;
+    private InputAction hookFlying;
+    private InputAction pause;
 
     private Rigidbody rb;
     private Animator animator;
     private Camera mainCamera;
+    private float moveSpeed;
+    private Vector3 moveDirection;
     private float baseRunSpeed;
     private bool useGravity;
     private bool isGrounded;
     private bool canWallRun;
+    private bool canAllInput;       //  プレイヤーの全ての入力ができるか
+    private bool canInputAction;    //  プレイヤーを直接動かす入力ができるか
 
-
-    private float moveSpeed;
-    private Vector3 moveDirection;
 
     public bool HoldHand = true;
 
@@ -66,6 +71,8 @@ public class PlayerController : MonoBehaviour
         jump = playerInput.actions["Jump"];
         crouch = playerInput.actions["Crouch"];
         throwKnife = playerInput.actions["ThrowKnife"];
+        hookFlying = playerInput.actions["HookFlying"];
+        pause = playerInput.actions["Pause"];
 
         rb = GetComponent<Rigidbody>();
         animator = GetComponent<Animator>();
@@ -74,6 +81,8 @@ public class PlayerController : MonoBehaviour
         baseRunSpeed = runSpeed;
         useGravity = true;
         canWallRun = true;
+        canAllInput = true;
+        canInputAction = true;
 
         Cursor.lockState = CursorLockMode.Locked;
     }
@@ -81,17 +90,184 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //  プレイヤーの入力を取得
-        Vector2 moveInput = move.ReadValue<Vector2>();
-        Vector2 lookInput = look.ReadValue<Vector2>();
+        //  プレイヤーの入力を受け取る変数
+        Vector2 moveInput = Vector2.zero;
+        Vector2 lookInput = Vector2.zero;
+
+        moveSpeed = runSpeed;
+        isGrounded = IsGrounded();
+
+        if (canAllInput)
+        {
+            if (canInputAction)
+            {
+                //  プレイヤーの入力を取得
+                moveInput = move.ReadValue<Vector2>();
+                lookInput = look.ReadValue<Vector2>();
+
+                SeparatePlayerAction(moveInput);
+
+                //  ナイフを投げるトリガーを押したとき
+                if (throwKnife.triggered)
+                {
+                    if (knifeShot.Shot)
+                    {
+                        knifeShot.ReCharge();
+                        HoldHand = true;
+                    }
+                    else
+                    {
+                        knifeShot.ThrowingKnife();
+                        HoldHand = false;
+                    }
+                }
+            }
+
+
+            //  ポーズトリガーを押したとき
+            if (pause.triggered)
+            {
+                sceneChange_Manager.OnPushPauseTrigger();
+
+                if (sceneChange_Manager.IsPause)
+                {
+                    canInputAction = false;
+                }
+                else
+                {
+                    canInputAction = true;
+                }
+            }
+        }
 
         //  カメラを基準にプレイヤーを動かす
         Quaternion cameraRotationY = Quaternion.AngleAxis(mainCamera.transform.eulerAngles.y, Vector3.up);
         moveDirection = cameraRotationY * new Vector3(moveInput.x, 0, moveInput.y).normalized;
 
-        moveSpeed = runSpeed;
-        isGrounded = IsGrounded();
+        //  カメラの垂直方向の回転
+        aimTarget.transform.localRotation = Quaternion.Euler(cameraController.CameraRotateVertical(aimTarget.transform, lookInput));
+        //  カメラの水平方向の回転
+        transform.rotation = Quaternion.Euler(cameraController.CameraRotateHorizontal(transform, lookInput));
+        transform.rotation = Quaternion.Euler(new Vector3(0, transform.localEulerAngles.y, wallRun.Tilt));
 
+        //  移動速度のセット
+        if (isGrounded)
+        {
+            rb.velocity = new Vector3(moveDirection.x * moveSpeed, rb.velocity.y, moveDirection.z * moveSpeed);
+        }
+        //  壁走りの状態だったら
+        else if (CurrentPlayerState == PlayerState.WallRun)
+        {
+            //  カメラのXを基準に上下にも移動させる
+            Quaternion cameraRotationX = Quaternion.AngleAxis(mainCamera.transform.eulerAngles.x, transform.right);
+            moveDirection = cameraRotationX * moveDirection.normalized;
+            rb.velocity = moveDirection * moveSpeed;
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        if (useGravity)
+        {
+            //  重力をかける
+            rb.AddForce(gravity, ForceMode.Acceleration);
+        }
+
+        //  地面に触れていなくて、壁走りじゃない時に慣性を付ける
+        if (!isGrounded && CurrentPlayerState != PlayerState.WallRun)
+        {
+            rb.AddForce(jumpMoveForceMultiplier * (moveDirection * moveSpeed - new Vector3(rb.velocity.x, 0, rb.velocity.z)), ForceMode.Acceleration);
+        }
+    }
+
+    private void OnTriggerEnter(Collider col)
+    {
+        if (col.gameObject.CompareTag("Death"))
+        {
+            OnDeath();
+        }
+    }
+
+    /// <summary>
+    /// プレイヤーの状態を変更する
+    /// </summary>
+    /// <param name="setState">変更する状態</param>
+    public void SetPlayerState(PlayerState setState)
+    {
+        //  変更前の状態を取得
+        PlayerState previousPlayerState = CurrentPlayerState;
+
+        //  変更後の状態を代入する
+        CurrentPlayerState = setState;
+
+        //  変更前の状態で遷移時に実行する処理
+        switch (previousPlayerState)
+        {
+            case PlayerState.Default:
+                break;
+
+            case PlayerState.Crouch:
+                break;
+
+            case PlayerState.Sliding:
+
+                break;
+
+            case PlayerState.WallRun:
+
+                useGravity = true;
+                wallRun.EndWallRun();
+                StopCoroutine(WallDetectionDelay());
+                StartCoroutine(WallDetectionDelay());
+                break;
+        }
+
+        //  変更後の状態で遷移時に実行する処理
+        switch (setState)
+        {
+            case PlayerState.Default:
+
+                break;
+
+            case PlayerState.Crouch:
+
+                break;
+
+            case PlayerState.Sliding:
+
+                break;
+
+            case PlayerState.WallRun:
+                rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z);
+                useGravity = false;
+                break;
+        }
+    }
+
+    /// <summary>
+    /// プレイヤーの移動速度を上げる
+    /// </summary>
+    /// <param name="SpeedUpMultiplier"></param>
+    public void RunSpeedUp(float SpeedUpMultiplier)
+    {
+        runSpeed += (SpeedUpMultiplier - 1) * baseRunSpeed;
+    }
+
+    /// <summary>
+    /// プレイヤーが死んだとき
+    /// </summary>
+    public void OnDeath()
+    {
+        canAllInput = false;
+        gameManager.GameOver();
+    }
+
+    /// <summary>
+    /// 状態ごとに挙動を変える
+    /// </summary>
+    /// <param name="moveInput">移動入力</param>
+    private void SeparatePlayerAction(Vector2 moveInput)
+    {
         switch (CurrentPlayerState)
         {
             //  通常時の処理
@@ -196,118 +372,13 @@ public class PlayerController : MonoBehaviour
 
                 break;
         }
-
-        //  ナイフを投げる処理
-        if (throwKnife.triggered)
-        {
-            if (knifeShot.Shot)
-            {
-                knifeShot.ReCharge();
-                HoldHand = true;
-            }
-            else
-            {
-                knifeShot.ThrowingKnife();
-                HoldHand = false;
-            }
-        }
-
-        //  カメラの垂直方向の回転
-        aimTarget.transform.localRotation = Quaternion.Euler(cameraController.CameraRotateVertical(aimTarget.transform, lookInput));
-        //  カメラの水平方向の回転
-        transform.rotation = Quaternion.Euler(cameraController.CameraRotateHorizontal(transform, lookInput));
-        transform.rotation = Quaternion.Euler(new Vector3(0, transform.localEulerAngles.y, wallRun.Tilt));
-
-        //  移動速度のセット
-        if (isGrounded)
-        {
-            rb.velocity = new Vector3(moveDirection.x * moveSpeed, rb.velocity.y, moveDirection.z * moveSpeed);
-        }
-        else if (CurrentPlayerState == PlayerState.WallRun)
-        {
-            //  カメラのXを基準に上下にも移動させる
-            Quaternion cameraRotationX = Quaternion.AngleAxis(mainCamera.transform.eulerAngles.x, transform.right);
-            moveDirection = cameraRotationX * moveDirection.normalized;
-            rb.velocity = moveDirection * moveSpeed;
-        }
-    }
-
-    private void FixedUpdate()
-    {
-        if (useGravity)
-        {
-            //  重力をかける
-            rb.AddForce(gravity, ForceMode.Acceleration);
-        }
-
-        //  地面に触れていなくて、壁走りじゃない時に慣性を付ける
-        if (!isGrounded && CurrentPlayerState != PlayerState.WallRun)
-        {
-            rb.AddForce(jumpMoveForceMultiplier * (moveDirection * moveSpeed - new Vector3(rb.velocity.x, 0, rb.velocity.z)), ForceMode.Acceleration);
-        }
     }
 
     /// <summary>
-    /// プレイヤーの状態を変更する
+    /// ジャンプ
     /// </summary>
-    /// <param name="setState">変更する状態</param>
-    public void SetPlayerState(PlayerState setState)
-    {
-        //  変更前の状態を取得
-        PlayerState previousPlayerState = CurrentPlayerState;
-
-        //  変更後の状態を代入する
-        CurrentPlayerState = setState;
-
-        //  変更前の状態で遷移時に実行する処理
-        switch (previousPlayerState)
-        {
-            case PlayerState.Default:
-                break;
-
-            case PlayerState.Crouch:
-                break;
-
-            case PlayerState.Sliding:
-
-                break;
-
-            case PlayerState.WallRun:
-
-                useGravity = true;
-                wallRun.EndWallRun();
-                StopCoroutine(WallDetectionDelay());
-                StartCoroutine(WallDetectionDelay());
-                break;
-        }
-
-        //  変更後の状態で遷移時に実行する処理
-        switch (setState)
-        {
-            case PlayerState.Default:
-
-                break;
-
-            case PlayerState.Crouch:
-
-                break;
-
-            case PlayerState.Sliding:
-
-                break;
-
-            case PlayerState.WallRun:
-                rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z);
-                useGravity = false;
-                break;
-        }
-    }
-
-    public void RunSpeedUp(float SpeedUpMultiplier)
-    {
-        runSpeed += (SpeedUpMultiplier - 1) * baseRunSpeed;
-    }
-
+    /// <param name="jumpDirection">ジャンプ方向</param>
+    /// <param name="jumpForce">ジャンプ力</param>
     private void Jump(Vector3 jumpDirection, float jumpForce)
     {
         //animator.SetTrigger(PlayerState.Jump.ToString());
@@ -335,6 +406,10 @@ public class PlayerController : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// 壁の検知にディレイをかける
+    /// </summary>
+    /// <returns></returns>
     private IEnumerator WallDetectionDelay()
     {
         canWallRun = false;
