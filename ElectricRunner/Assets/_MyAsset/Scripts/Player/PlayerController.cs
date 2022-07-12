@@ -10,6 +10,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float runSpeed;
     [SerializeField] private float jumpForce;
     [SerializeField, Tooltip("ジャンプ時の移動のしやすさ")] private float jumpMoveForceMultiplier;
+    [SerializeField] private float hookFlyingDuration;
     [SerializeField] private Vector3 gravity;
     [SerializeField, Header("カメラのターゲット")] private Transform aimTarget;
 
@@ -46,7 +47,11 @@ public class PlayerController : MonoBehaviour
     private bool isGrounded;
     private bool canWallRun;
     private bool canAllInput;       //  プレイヤーの全ての入力ができるか
-    private bool canInputAction;    //  プレイヤーを直接動かす入力ができるか
+
+    // ナイフの場所に飛ぶ設定
+    private Vector3 hookFlyingBeginPosition;
+    private Vector3 hookFlyingEndPosition;
+    private float hookFlyingMoveRate;
 
 
     public bool HoldHand = true;
@@ -57,6 +62,7 @@ public class PlayerController : MonoBehaviour
         Crouch,     //  しゃがみ
         Sliding,    //  スライディング
         WallRun,    //  壁走り
+        HookFlying,
     }
 
     public PlayerState CurrentPlayerState { get; private set; }
@@ -82,7 +88,6 @@ public class PlayerController : MonoBehaviour
         useGravity = true;
         canWallRun = true;
         canAllInput = true;
-        canInputAction = true;
 
         Cursor.lockState = CursorLockMode.Locked;
     }
@@ -99,12 +104,14 @@ public class PlayerController : MonoBehaviour
 
         if (canAllInput)
         {
-            if (canInputAction)
-            {
-                //  プレイヤーの入力を取得
-                moveInput = move.ReadValue<Vector2>();
-                lookInput = look.ReadValue<Vector2>();
+            //  プレイヤーの入力を取得
+            moveInput = move.ReadValue<Vector2>();
+            lookInput = look.ReadValue<Vector2>();
 
+            Move(0, Vector3.zero);
+
+            if (!sceneChange_Manager.IsPause)
+            {
                 SeparatePlayerAction(moveInput);
 
                 //  ナイフを投げるトリガーを押したとき
@@ -121,22 +128,17 @@ public class PlayerController : MonoBehaviour
                         HoldHand = false;
                     }
                 }
-            }
 
+                if (hookFlying.triggered && knifeShot.CanHookFlying)
+                {
+                    SetPlayerState(PlayerState.HookFlying);
+                }
+            }
 
             //  ポーズトリガーを押したとき
             if (pause.triggered)
             {
                 sceneChange_Manager.OnPushPauseTrigger();
-
-                if (sceneChange_Manager.IsPause)
-                {
-                    canInputAction = false;
-                }
-                else
-                {
-                    canInputAction = true;
-                }
             }
         }
 
@@ -220,6 +222,11 @@ public class PlayerController : MonoBehaviour
                 StopCoroutine(WallDetectionDelay());
                 StartCoroutine(WallDetectionDelay());
                 break;
+
+            case PlayerState.HookFlying:
+                useGravity = true;
+                rb.velocity = Vector3.zero;
+                break;
         }
 
         //  変更後の状態で遷移時に実行する処理
@@ -240,6 +247,13 @@ public class PlayerController : MonoBehaviour
             case PlayerState.WallRun:
                 rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z);
                 useGravity = false;
+                break;
+
+            case PlayerState.HookFlying:
+                useGravity = false;
+                hookFlyingBeginPosition = transform.position;
+                hookFlyingEndPosition = knifeShot.GetKnifePosition;
+                hookFlyingMoveRate = 0;
                 break;
         }
     }
@@ -273,6 +287,8 @@ public class PlayerController : MonoBehaviour
             //  通常時の処理
             case PlayerState.Default:
 
+                Move(runSpeed, moveInput);
+
                 //  地面に接していればジャンプとスライディングができる
                 if (isGrounded)
                 {
@@ -303,7 +319,7 @@ public class PlayerController : MonoBehaviour
             case PlayerState.Crouch:
 
                 //  移動速度をしゃがみ時の速度にする
-                moveSpeed = playerCrouching.GetCrouchingMoveSpeed(runSpeed);
+                Move(playerCrouching.GetCrouchingMoveSpeed(runSpeed), moveInput);
 
                 //  しゃがみの入力がなくなったら立ち上がる
                 if (!crouch.IsPressed())
@@ -325,11 +341,9 @@ public class PlayerController : MonoBehaviour
             //  スライディング時の処理
             case PlayerState.Sliding:
 
-                //  移動方向をスライディングし始めた時の方向にする
-                moveDirection = playerCrouching.MoveDirection;
-
                 //  移動速度をスライディング時の速度にする
-                moveSpeed = playerCrouching.GetSlidingMoveSpeed(runSpeed);
+                //  移動方向をスライディングし始めた時の方向にする
+                Move(playerCrouching.GetSlidingMoveSpeed(runSpeed), playerCrouching.MoveDirection);
 
                 //  スライディングしている時間を計測する
                 playerCrouching.AddSlidingTime();
@@ -359,6 +373,8 @@ public class PlayerController : MonoBehaviour
 
             case PlayerState.WallRun:
 
+                Move(runSpeed, moveInput);
+
                 //  壁に触れなくなったか速度が一定以下なら壁走りをやめる
                 if (!wallRun.ExistsWall() || moveInput.y <= 0.1f)
                 {
@@ -371,7 +387,26 @@ public class PlayerController : MonoBehaviour
                 }
 
                 break;
+
+            case PlayerState.HookFlying:
+
+                hookFlyingMoveRate += 1 / hookFlyingDuration * Time.deltaTime;
+
+                rb.position = Vector3.Lerp(hookFlyingBeginPosition, hookFlyingEndPosition, hookFlyingMoveRate);
+
+                if (hookFlyingMoveRate >= 1)
+                {
+                    SetPlayerState(PlayerState.Default);
+                }
+
+                break;
         }
+    }
+
+    private void Move(float moveSpeed, Vector3 moveDirection)
+    {
+        this.moveSpeed = moveSpeed;
+        this.moveDirection = moveDirection;
     }
 
     /// <summary>

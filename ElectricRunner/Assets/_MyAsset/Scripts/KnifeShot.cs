@@ -48,9 +48,15 @@ public class KnifeShot : MonoBehaviour
     //  ナイフの親オブジェクト
     Transform parentObj;
 
+    private DestroyKnife destroyKnife;
+
+    public Vector3 GetKnifePosition => Knife.transform.position;
+    public bool CanHookFlying { get; private set; }
     private void Start()
     {
         rb = Knife.GetComponent<Rigidbody>();
+        destroyKnife = Knife.GetComponent<DestroyKnife>();
+
         //  現在のナイフのローカル座標を覚えておく
         knifeBackPoint = Knife.transform.localPosition;
         //  現在の親オブジェクトを入れる
@@ -71,6 +77,7 @@ public class KnifeShot : MonoBehaviour
             ReCharge();
         }
 
+        CanHookFlying = destroyKnife.Stop;
     }
     private void OnTriggerEnter(Collider other)
     {
@@ -162,18 +169,6 @@ public class KnifeShot : MonoBehaviour
             Chatch = false;
         }
     }
-
-    //ナイフの刺さった位置へ飛ぶ
-    //public void HookFlyingMovement()
-    //{
-    //    if (Knife.GetComponent<DestroyKnife>().Stop)
-    //    {
-    //        Vector3 hookPoint = Knife.transform.position;
-    //        Vector3 moveDir = (hookPoint - transform.position).normalized;
-    //        float flyingSpeed = Vector3.Distance(transform.position, hookPoint) * 2f;
-    //        transform.Translate(Vector3.forward * speed * flyingSpeed * Time.deltaTime);
-    //    }
-    //}
 
     private void OnDrawGizmos()
     {
