@@ -3478,6 +3478,12 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 1312644574}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &463626777 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 820316624561787458, guid: d979a5217c630114097c338b048cf9fc,
+    type: 3}
+  m_PrefabInstance: {fileID: 2060984498}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &466284094
 GameObject:
   m_ObjectHideFlags: 0
@@ -6767,6 +6773,12 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1023409188}
   m_Mesh: {fileID: 4300056, guid: c6d026d6367d43a438c71a59c9da8290, type: 3}
+--- !u!4 &1025102249 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 568123170487570026, guid: d979a5217c630114097c338b048cf9fc,
+    type: 3}
+  m_PrefabInstance: {fileID: 2060984498}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1033993235
 GameObject:
   m_ObjectHideFlags: 0
@@ -10364,6 +10376,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 115efc1996a3f364a937b332d115ea01, type: 3}
+--- !u!4 &1318159733 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2036281088779205083, guid: d979a5217c630114097c338b048cf9fc,
+    type: 3}
+  m_PrefabInstance: {fileID: 2060984498}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1331087071
 GameObject:
   m_ObjectHideFlags: 0
@@ -13404,7 +13422,7 @@ MonoBehaviour:
     ModeOverride: 0
     LensShift: {x: 0, y: 0}
     GateFit: 2
-    m_SensorSize: {x: 2.3047073, y: 1}
+    m_SensorSize: {x: 1.7777778, y: 1}
   m_Transitions:
     m_BlendHint: 0
     m_InheritPosition: 0
@@ -14268,14 +14286,48 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 982457608, guid: d979a5217c630114097c338b048cf9fc, type: 3}
+      propertyPath: knife
+      value: 
+      objectReference: {fileID: 463626777}
+    - target: {fileID: 982457608, guid: d979a5217c630114097c338b048cf9fc, type: 3}
+      propertyPath: speed
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 982457608, guid: d979a5217c630114097c338b048cf9fc, type: 3}
       propertyPath: mainCam
       value: 
       objectReference: {fileID: 1303619640}
+    - target: {fileID: 982457608, guid: d979a5217c630114097c338b048cf9fc, type: 3}
+      propertyPath: maxWireLength
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 982457608, guid: d979a5217c630114097c338b048cf9fc, type: 3}
+      propertyPath: returnDuration
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 982457608, guid: d979a5217c630114097c338b048cf9fc, type: 3}
+      propertyPath: assistRayRadius
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 982457608, guid: d979a5217c630114097c338b048cf9fc, type: 3}
+      propertyPath: aimAssistRayRadius
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3438631559864050672, guid: d979a5217c630114097c338b048cf9fc,
         type: 3}
       propertyPath: mainCamera
       value: 
       objectReference: {fileID: 1303619640}
+    - target: {fileID: 3438631559864050672, guid: d979a5217c630114097c338b048cf9fc,
+        type: 3}
+      propertyPath: sticksPoint
+      value: 
+      objectReference: {fileID: 1318159733}
+    - target: {fileID: 3438631559864050672, guid: d979a5217c630114097c338b048cf9fc,
+        type: 3}
+      propertyPath: hookFlyingPoint
+      value: 
+      objectReference: {fileID: 1025102249}
     - target: {fileID: 5363315561696234752, guid: d979a5217c630114097c338b048cf9fc,
         type: 3}
       propertyPath: m_RootOrder
@@ -14341,6 +14393,11 @@ PrefabInstance:
       propertyPath: cameraController
       value: 
       objectReference: {fileID: 1303619635}
+    - target: {fileID: 5363315561696234753, guid: d979a5217c630114097c338b048cf9fc,
+        type: 3}
+      propertyPath: hookFlyingDuration
+      value: 0.1
+      objectReference: {fileID: 0}
     - target: {fileID: 5363315561696234753, guid: d979a5217c630114097c338b048cf9fc,
         type: 3}
       propertyPath: sceneChange_Manager

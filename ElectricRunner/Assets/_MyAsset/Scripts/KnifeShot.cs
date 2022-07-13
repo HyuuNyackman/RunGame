@@ -15,32 +15,18 @@ public class KnifeShot : MonoBehaviour
 {
     // float変数
     [SerializeField] float speed;
-    [SerializeField] float Distance;
-    public float Radius;
+    [SerializeField, Tooltip("ナイフを戻すのにかかる時間")] float returnDuration;
+    [SerializeField, Tooltip("ナイフを飛ばせる距離")] float maxWireLength;
 
-    //bool変数
-    public bool Return;
-    public bool Shot = false;
-    public bool Chatch;
-    // private bool back;
-
-    // GameObject変数
-    public GameObject Knife;
-    public GameObject ShotPoint;
-
+    [SerializeField] private Transform knife;
     [SerializeField] Transform mainCam;
+    [SerializeField] private float assistRayRadius;
     [SerializeField] float assistRange = 10;
-    [SerializeField] bool isHit;
     [SerializeField] GameObject knifeTrail;
 
 
-    //ナイフを打ち出す場所
-    // public GameObject KnifeShotPoint;
     //  ナイフを戻す場所(スタート時のローカル座標)
     Vector3 knifeBackPoint;
-
-    //RigidBody変数
-    Rigidbody rb;
 
     //その他
     RaycastHit hit;
@@ -48,136 +34,149 @@ public class KnifeShot : MonoBehaviour
     //  ナイフの親オブジェクト
     Transform parentObj;
 
+    private bool knifeReturns;              //  ナイフを戻している最中か
     private DestroyKnife destroyKnife;
 
-    public Vector3 GetKnifePosition => Knife.transform.position;
-    public bool CanHookFlying { get; private set; }
+    public Vector3 GetHookFlyingPoint => destroyKnife.GetHookFlyingPoint;
+    public bool KnifeHolds { get; private set; }        //  ナイフを持っているか
+    public bool CanHookFlying { get; private set; }     //  ナイフの場所に飛べるか
+
     private void Start()
     {
-        rb = Knife.GetComponent<Rigidbody>();
-        destroyKnife = Knife.GetComponent<DestroyKnife>();
+        destroyKnife = knife.GetComponent<DestroyKnife>();
 
         //  現在のナイフのローカル座標を覚えておく
-        knifeBackPoint = Knife.transform.localPosition;
+        knifeBackPoint = knife.transform.localPosition;
         //  現在の親オブジェクトを入れる
-        parentObj = Knife.transform.parent;
+        parentObj = knife.transform.parent;
+
+        //  初期化する
+        OnHoldKnife();
     }
     public void Update()
     {
-        //一定距離離れたらリチャージ
-        float dis = Vector3.Distance(mainCam.position, Knife.transform.position);
+        //一定距離離れたらナイフを戻す
+        float dis = Vector3.Distance(mainCam.position, knife.transform.position);
 
-        // //マウス右を押したときに回収
-        // if (Input.GetMouseButtonDown(1) && Shot)
-        // {
-        //     back = true;
-        // }
-        if (dis > Distance)
+        if (dis > maxWireLength)
         {
-            ReCharge();
+            ReturnKnife();
         }
 
-        CanHookFlying = destroyKnife.Stop;
+        CanHookFlying = destroyKnife.Sticks;
     }
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.tag == "Knife")
+        //  ナイフが刺さっているか、戻している時に
+        //  ナイフに触れたら手元に戻す
+        if (other.gameObject.CompareTag("Knife") && (destroyKnife.Sticks || knifeReturns))
         {
-            Return = false;
-            Shot = false;
-            //自分の場所に戻す
-            Knife.transform.parent = parentObj;
-            Knife.transform.localPosition = knifeBackPoint;
-            Knife.transform.localRotation = Quaternion.Euler(Vector3.zero);
+            //  ナイフをつかむ
+            OnHoldKnife();
         }
     }
+
+    /// <summary>
+    /// ナイフを投げる
+    /// </summary>
     public void ThrowingKnife()
     {
-        isHit = Physics.SphereCast(mainCam.position, Radius, mainCam.forward * assistRange, out hit);
-
-        if (isHit)
+        if (!KnifeHolds)
         {
-            //Rayの当たったオブジェクトがtargetタグだった場合
-            if (hit.collider.tag == "Target")
-            {
-                Debug.Log("Targetが有効");
+            return;
+        }
 
-                //そのオブジェクトをShotPoint変数に格納
-                ShotPoint = hit.collider.gameObject;
-            }
-            else
-            {
-                ShotPoint = null;
-            }
+        Vector3 throwPoint;
+        Vector3 throwDirection;
 
+        if (IsHitTarget())
+        {
+            //  ヒットしたオブジェクトの原点に飛ばす
+            throwPoint = hit.collider.transform.position;
+            //  ヒットした場所に飛ばすならこっち
+            //shootPoint = hit.point;
+
+            throwDirection = (throwPoint - knife.position).normalized;
+            knife.transform.LookAt(throwPoint);
         }
         else
         {
-            ShotPoint = null;
+            throwDirection = mainCam.forward;
+            knife.transform.forward = throwDirection;
         }
 
-        if (Shot == false && ShotPoint == null && Return == false)
-        {
-            //エフェクト
-            knifeTrail.SetActive(true);
+        //エフェクト
+        knifeTrail.SetActive(true);
 
-            //ナイフのショット
-            Knife.transform.parent = null;
-            Shot = true;
-            rb.isKinematic = false;
-            Knife.transform.rotation = Quaternion.LookRotation(mainCam.forward);
-            Vector3 force = mainCam.forward * speed;
-            rb.AddForce(force, ForceMode.Impulse);
-        }
-        //Rayに引っ掛かってるときの処理
-        else if (Shot == false && Return == false)
-        {
-            //エフェクト
-            knifeTrail.SetActive(true);
-
-            Knife.transform.parent = null;
-            Shot = true;
-            rb.isKinematic = false;
-
-            //発射台とターゲットのベクトルを計算する
-            Vector3 knifeShotPoint = Knife.transform.position;
-            Vector3 GameObjectPos = knifeShotPoint;
-            Vector3 TargetPos = ShotPoint.transform.position;
-            Vector3 shotForward = (TargetPos - GameObjectPos).normalized;
-            Knife.transform.rotation = Quaternion.LookRotation(ShotPoint.transform.position);
-
-            //ナイフのショット
-            rb.AddForce(shotForward * speed, ForceMode.Impulse);
-        }
-        else if (ShotPoint == null)
-        {
-
-        }
+        KnifeHolds = false;
+        knife.transform.parent = null;
+        destroyKnife.Throw(speed, throwDirection);
     }
-    public void ReCharge()
+
+    /// <summary>
+    /// ナイフを手元に戻す
+    /// </summary>
+    public void ReturnKnife()
     {
-        //回収時に元の位置に戻す
-        Return = true;
-        rb.velocity = Vector3.zero;
-        rb.isKinematic = true;
-        Shot = false;
-        //自分の場所に戻す
-        if (Chatch)
+        if (KnifeHolds || knifeReturns)
         {
-            Knife.transform.parent = parentObj;
-            Knife.transform.localPosition = knifeBackPoint;
-            Chatch = false;
+            return;
         }
+
+        knifeReturns = true;
+        Vector3 moveDirection = (mainCam.position - knife.position).normalized;
+        destroyKnife.Return(returnDuration, moveDirection);
     }
 
-    private void OnDrawGizmos()
+    /// <summary>
+    /// ナイフが完全に戻ってきたとき
+    /// </summary>
+    private void OnHoldKnife()
     {
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(mainCam.position, Radius);
-        if (isHit)
-        {
-            Gizmos.color = Color.red;
-        }
+        KnifeHolds = true;
+        knifeReturns = false;
+
+        //  ナイフの動きを止める
+        destroyKnife.Hold();
+
+        //  エフェクトを止める
+        knifeTrail.SetActive(false);
+
+        //  元の場所に戻す
+        knife.transform.parent = parentObj;
+        knife.transform.localPosition = knifeBackPoint;
+        knife.transform.localRotation = Quaternion.Euler(Vector3.zero);
     }
+
+    /// <summary>
+    /// ターゲットにレイが当たったか調べる
+    /// </summary>
+    /// <returns>レイが当たったか</returns>
+    private bool IsHitTarget()
+    {
+        bool isHit = false;
+
+        if (Physics.SphereCast(mainCam.position, assistRayRadius, mainCam.forward * assistRange, out hit))
+        {
+            //Rayの当たったオブジェクトがtargetタグだった場合
+            if (hit.collider.CompareTag("Target"))
+            {
+                //Debug.Log("Targetが有効");
+                isHit = true;
+            }
+        }
+
+        return isHit;
+    }
+
+    // private void OnDrawGizmos()
+    // {
+    //     Gizmos.color = Color.yellow;
+    //     Gizmos.DrawWireSphere(mainCam.position, aimAssistRayRadius);
+    //     if (isHit)
+    //     {
+    //         Gizmos.color = Color.red;
+    //     }
+    // }
 }
 

@@ -53,9 +53,6 @@ public class PlayerController : MonoBehaviour
     private Vector3 hookFlyingEndPosition;
     private float hookFlyingMoveRate;
 
-
-    public bool HoldHand = true;
-
     public enum PlayerState
     {
         Default,    //  通常
@@ -117,15 +114,13 @@ public class PlayerController : MonoBehaviour
                 //  ナイフを投げるトリガーを押したとき
                 if (throwKnife.triggered)
                 {
-                    if (knifeShot.Shot)
+                    if (knifeShot.KnifeHolds)
                     {
-                        knifeShot.ReCharge();
-                        HoldHand = true;
+                        knifeShot.ThrowingKnife();
                     }
                     else
                     {
-                        knifeShot.ThrowingKnife();
-                        HoldHand = false;
+                        knifeShot.ReturnKnife();
                     }
                 }
 
@@ -252,7 +247,7 @@ public class PlayerController : MonoBehaviour
             case PlayerState.HookFlying:
                 useGravity = false;
                 hookFlyingBeginPosition = transform.position;
-                hookFlyingEndPosition = knifeShot.GetKnifePosition;
+                hookFlyingEndPosition = knifeShot.GetHookFlyingPoint;
                 hookFlyingMoveRate = 0;
                 break;
         }

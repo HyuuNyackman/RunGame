@@ -241,6 +241,7 @@ MonoBehaviour:
   Chatch: 0
   Knife: {fileID: 820316624561787459}
   ShotPoint: {fileID: 0}
+  hookFlyingPoint: {fileID: 568123170487570026}
   mainCam: {fileID: 0}
   assistRange: 1000
   isHit: 0
@@ -1958,6 +1959,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4c6d0fb7c277a494fa4e294daf7186bd, type: 3}
+--- !u!4 &568123170487570026 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8773825881996760367, guid: 4c6d0fb7c277a494fa4e294daf7186bd,
+    type: 3}
+  m_PrefabInstance: {fileID: 9088410438170778437}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &820316624561787459 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8449558549541243142, guid: 4c6d0fb7c277a494fa4e294daf7186bd,
